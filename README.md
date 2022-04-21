@@ -1,6 +1,7 @@
 # rxc-sync-program
 RxC Sync Program ( Ran X Crypto )
 
+you can compile ur own exe using `auto-py-to-exe` 
 
 <h1>How to use?</h1>
 
