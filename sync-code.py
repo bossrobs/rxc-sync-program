@@ -2,7 +2,6 @@ import tkinter as tk
 import requests,json
 from web3 import Web3
 from eth_account.messages import encode_defunct
-from datetime import datetime
 from pypasser import reCaptchaV3
 
 frame = tk.Tk()
