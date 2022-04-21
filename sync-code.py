@@ -13,15 +13,13 @@ frame.geometry('265x126')
 def get_nonce(address):
     try:
         reCaptcha_response = reCaptchaV3('https://www.google.com.ph/recaptcha/api2/anchor?ar=1&k=6LeZh4IcAAAAAI7foL4X_gcEHdXquHXfc39JU_kY&co=aHR0cHM6Ly9yeGMucmFuLm5ldHdvcms6NDQz&hl=en&v=QENb_qRrX0-mQMyENQjD6Fuj&size=invisible&cb=ys0l0yutd9i2')
-    except pypasser.exceptions.ConnectionError:
-        lbl.config(text = "Can't get Captcha Response")
-        lbl.place(x=55,y=100)
-
-    try:
         url = "https://rxc-prod-api.ran.network/metamask/request"
         r = requests.post(url,data={"address": address,"g-recaptcha-response": reCaptcha_response})
         nonce = r.json()
         nonce = nonce['data']
+    except pypasser.exceptions.ConnectionError:
+        lbl.config(text = "Can't get Captcha Response")
+        lbl.place(x=55,y=100)
     except requests.exceptions.ConnectTimeout:
         lbl.config(text = "Connection timeout Please Retry")
         lbl.place(x=55,y=100)
