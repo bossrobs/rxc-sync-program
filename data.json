@@ -1,0 +1,16 @@
+{
+    "data":{
+        "account01":{
+            "address":"wallet_address",
+            "private_key":"private_key"
+        },
+        "account02":{
+            "address":"wallet_address",
+            "private_key":"private_key"
+        },
+        "account03":{
+            "address":"wallet_address",
+            "private_key":"private_key"
+        }
+    }
+}
