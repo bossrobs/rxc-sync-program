@@ -7,6 +7,7 @@ from web3 import Web3
 from eth_account.messages import encode_defunct
 from datetime import datetime
 from pypasser import reCaptchaV3
+import pypasser
 
 # Top level window
 frame = Tk()
@@ -23,7 +24,24 @@ optionsfile = json.loads(optionsfile)
 i = 0
 for user in optionsfile['data']:
     options.insert(i,user)
+    i += 1
 
+
+
+def get_characters(address):
+    abi = '[{"inputs":[{"internalType":"address","name":"player","type":"address"}],"name":"getCharactersOfAddress","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"},{"components":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"chaClass","type":"uint256"},{"internalType":"uint256","name":"chaSchool","type":"uint256"},{"internalType":"uint256","name":"chaStRemain","type":"uint256"},{"internalType":"uint256","name":"parentMaleTokenId","type":"uint256"},{"internalType":"uint256","name":"parentFemaleTokenId","type":"uint256"},{"internalType":"uint256","name":"breedCount","type":"uint256"},{"internalType":"uint256","name":"bornTimeStamp","type":"uint256"},{"internalType":"uint256","name":"transferCooldown","type":"uint256"},{"internalType":"uint256","name":"generation","type":"uint256"},{"internalType":"bool","name":"isBlocked","type":"bool"}],"internalType":"struct RxcCharacters.Character[]","name":"","type":"tuple[]"}],"stateMutability":"view","type":"function","constant":true,"signature":"0xcea28d7f"}]'
+
+    TokenAddress = "0xED778A5e4eF180E52c2ec9d863Bf9Ff419036B46"
+    bsc = "https://bsc-dataseed.binance.org/"
+    web3 = Web3(Web3.HTTPProvider(bsc))
+    contract_address = web3.toChecksumAddress(TokenAddress)
+    abi = json.loads(json.dumps(abi))
+    contract = web3.eth.contract(address=contract_address, abi=abi)
+    Wallet_Data = json.dumps(contract.functions.getCharactersOfAddress(address).call())
+    characters = json.loads(Wallet_Data)
+    character_count = len(characters[0])
+    
+    return character_count
 
 def get_nonce(address):
     try:
@@ -32,9 +50,12 @@ def get_nonce(address):
         r = requests.post(url,data={"address": address,"g-recaptcha-response": reCaptcha_response})
         nonce = r.json()
         nonce = nonce['data']
+
+        return nonce
     except pypasser.exceptions.ConnectionError:
-        messagebox.showerror("Can't Get Captcha")
-    return nonce
+        messagebox.showerror("Error","Can't Get Captcha")
+        
+    
 
 def get_token(address,signature):
     url = "https://rxc-prod-api.ran.network/metamask/verify"
@@ -52,22 +73,36 @@ def get_session(address,private_key):
     session = get_token(address,web3.toHex(signed_message.signature))
     return session
 
-def sync_me(address,private_key):
+def syncer(session):
     try:
-        session = get_session(address,private_key)
         url = "https://rxc-prod-api.ran.network/pilot/sync"
         r = requests.post(url,headers={'Authorization': 'Bearer {}'.format(session['token'])},timeout=None)
         sync = r.json()
-        
+                    
         url_sync = "https://rxc-prod-api.ran.network/account/game/sync"
         r_sync = requests.post(url_sync,headers={'Authorization': 'Bearer {}'.format(session['token'])},timeout=None)
 
         url_logout = "https://rxc-prod-api.ran.network/logout"
         r_logout = requests.post(url_logout,headers={'Authorization': 'Bearer {}'.format(session['token'])},timeout=None,data={})
-        
-        #label.config(text = "[{}] - {}".format(session['user']['user']['username'],sync['message']))
-        #label.place(x=40,y=40)
+                    
         messagebox.showinfo("Info", "Sync Success for [{}]".format(session['user']['user']['username']))
+    except requests.exceptions.ConnectTimeout:
+        messagebox.showerror("Error", "Connection Timeout")
+
+def sync_me(address,private_key):
+    try:
+        session = get_session(address,private_key)
+        checker_url = "https://rxc-prod-api.ran.network/pilot/list"
+        checker = requests.get(checker_url,headers={'Authorization': 'Bearer {}'.format(session['token'])},timeout=None)
+        pilot_list = checker.json()
+        character_count = get_characters(address)
+        if character_count == 0:
+            if(len(pilot_list['data']['owned']) == 0 and len(pilot_list['data']['pilot']) == 0):
+                messagebox.showerror("Error","No character was found in address")
+            else:
+                syncer(session)
+        else:
+            syncer(session)
 
     except requests.exceptions.ConnectTimeout:
         messagebox.showerror("Error", "Connection Timeout")
